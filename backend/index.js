@@ -35,7 +35,7 @@ app.post('/signup', async (req,res)=>{
         })
         console.log({response})
         if(response){
-            return res.status(400).json({
+            return res.status(409).json({
                 message: "User already exists with same email or username."
             })
         }
@@ -71,7 +71,7 @@ app.post('/signin', async (req,res)=>{
             password : req.body.password
         })
         if(!response){
-            return res.status(400).json({
+            return res.status(404).json({
                 message : "User not found."
             })
         }
