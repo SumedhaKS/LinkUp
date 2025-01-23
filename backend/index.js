@@ -34,7 +34,32 @@ io.on("connection", (socket) => {
                 message : "User not found"
             })
         }
+        else{
+            
+        }
+    })
 
+    socket.on("Offer", (data)=>{
+        console.log(data.offer)
+    })
+
+    socket.on("createRoom", async (data)=>{
+        console.log(data)
+        const token = data.token.split(" ")[1];
+        const verifiedUser = jwt.verify(token, jwtSecret)
+        if(!verifiedUser){
+            return socket.emit("error", {
+                message : "User not found"
+            })
+        }
+
+        else{
+            const response = await User.findById({_id: verifiedUser.id})
+            socket.join(verifiedUser.id)
+            io.to(verifiedUser.id).emit("onCreated", {              // just to convey who is the creator of the room
+                user : response.username
+            })
+        }
     })
 
     socket.on("disconnect", ()=>{
