@@ -35,12 +35,8 @@ io.on("connection", (socket) => {
             })
         }
         else{
-            
+            return
         }
-    })
-
-    socket.on("Offer", (data)=>{
-        console.log(data.offer)
     })
 
     socket.on("createRoom", async (data)=>{
@@ -55,9 +51,10 @@ io.on("connection", (socket) => {
 
         else{
             const response = await User.findById({_id: verifiedUser.id})
-            socket.join(verifiedUser.id)
-            io.to(verifiedUser.id).emit("onCreated", {              // just to convey who is the creator of the room
-                user : response.username
+            socket.join(response._id)
+            io.to(response._id).emit("onCreated", {              // just to convey who is the creator of the room
+                user : response.username,
+                creator: response._id
             })
         }
     })
