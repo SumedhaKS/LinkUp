@@ -4,11 +4,13 @@ const port = 3001
 const cors = require("cors")
 const zod = require("zod")
 
-const { User } = require('./db/index')
+const { User, Room } = require('./db/index')
 const { jwt, jwtSecret } = require("./config")
 
 const http = require("http")
-const { Server } = require("socket.io") 
+const { Server } = require("socket.io")
+const { rmSync } = require("fs")
+const { resolve } = require("path")
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
@@ -18,48 +20,69 @@ const io = new Server(httpServer, {
     },
 });
 
-
 app.use(cors())
 app.use(express.json())
 
+const connectedSockets = [];
+
 io.on("connection", (socket) => {
     console.log("User connected: ", socket.id);
-
-    socket.on("joinRoom", async (data)=>{
-        console.log(data)
-        const token = data.token.split(" ")[1]
-        const verifiedUser = jwt.verify(token, jwtSecret)
-        if(!verifiedUser){
-            return socket.emit("error", {
-                message : "User not found"
-            })
-        }
-        else{
-            return
-        }
+    connectedSockets.push({
+        socketID : socket.id
     })
 
-    socket.on("createRoom", async (data)=>{
+    socket.on("create-room", async (data) => {
         console.log(data)
         const token = data.token.split(" ")[1];
         const verifiedUser = jwt.verify(token, jwtSecret)
-        if(!verifiedUser){
-            return socket.emit("error", {
-                message : "User not found"
-            })
+        if (!verifiedUser) {
+            return
         }
 
-        else{
-            const response = await User.findById({_id: verifiedUser.id})
-            socket.join(response._id)
-            io.to(response._id).emit("onCreated", {              // just to convey who is the creator of the room
-                user : response.username,
+        else {
+            const response = await User.findById({ _id: verifiedUser.id })
+            const newRoom = await Room.create({
                 creator: response._id
             })
+            if (newRoom) {
+                socket.join(newRoom._id)
+                io.to(newRoom._id).emit("on-create", {              // just to convey who is the creator of the room
+                    user: response.username,
+                    roomID : newRoom._id
+                })
+            }
+            else{
+                socket.emit("failed-room", "Couldn't create room. ")
+            }
         }
     })
 
-    socket.on("disconnect", ()=>{
+    socket.on("join-room", async (data)=>{
+        const token = data.token.split(" ")[1];
+        const validUser = jwt.verify(token, jwtSecret)
+        if(!validUser){
+            return
+        }
+        else{
+            const user = await User.findById({_id: validUser.id})
+            const response = await Room.findById({_id : data.roomID})
+            if(!response){
+                console.log("not found")
+                return
+            }
+            else{
+                socket.join(data.roomID)
+                console.log("joined")
+                io.to(data.roomID.toString()).emit("on-join", {     // not fixed
+                    roomID : data.roomID,
+                    userID : user._id
+                })
+                console.log("done")
+            }
+        }
+    })
+
+    socket.on("disconnect", () => {
         console.log("User disconnected: ", socket.id)
     })
 })
@@ -131,7 +154,7 @@ app.post('/signin', async (req, res) => {
             })
         }
         else {
-            const token = jwt.sign({ id : response._id }, jwtSecret)
+            const token = jwt.sign({ id: response._id }, jwtSecret)
             return res.status(200).json({
                 message: "Sign in successful",
                 token: token
