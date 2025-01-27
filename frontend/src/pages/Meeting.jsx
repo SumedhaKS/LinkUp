@@ -1,10 +1,32 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router";
 import { socket } from "../services/socket"
 
 export const Meeting = () => {
     const [meetingId, setMeetingId] = useState("")
+    const [message , setMessage] = useState("")
     const  navigate = useNavigate()
+
+    useEffect(()=>{
+        socket.on("on-join", (data)=>{
+            setMessage(data.msg)     
+        })
+
+        socket.on("on-create", (data)=>{
+            setMessage(`${data.roomID} , ${data.userID} , ${data.msg} `)
+            // navigate("/discussion")
+
+        })
+
+        socket.on("failed-room", ()=>{
+            alert("Failed to create new room. Please try again later")
+        })
+        return()=>{
+            socket.off("on-create")
+            socket.off("on-join")
+            socket.off("failed-room")
+        }
+    }, [])
 
     const joinRoom = () => {
         const Token = localStorage.getItem("token")
@@ -13,10 +35,6 @@ export const Meeting = () => {
             roomID : meetingId
         })
 
-        socket.on("on-join", (data)=>{
-            console.log(`User: ${data.userID}  joined roomID : ${data.roomID} .`)                
-        })
-        
     }
 
     const createRoom = () => {
@@ -25,14 +43,7 @@ export const Meeting = () => {
         socket.emit("create-room", {
             token: `Bearer ${Token}`
         })
-        socket.on("on-create", (data)=>{
-            console.log(`${data.user} created the room. ID: ${data.roomID} `)
-            navigate("/discussion")
-
-        })
-        socket.on("failed-room", ()=>{
-            alert("Failed to create new room. Please try again later")
-        })
+        
 
     }
 
@@ -53,6 +64,7 @@ export const Meeting = () => {
                 <button onClick={createRoom}>Create</button>
             </div>
         </div>
+        <h3>{message}</h3>
     </div>
 }
 

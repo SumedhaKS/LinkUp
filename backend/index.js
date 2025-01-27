@@ -9,8 +9,6 @@ const { jwt, jwtSecret } = require("./config")
 
 const http = require("http")
 const { Server } = require("socket.io")
-const { rmSync } = require("fs")
-const { resolve } = require("path")
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
@@ -45,10 +43,13 @@ io.on("connection", (socket) => {
                 creator: response._id
             })
             if (newRoom) {
-                socket.join(newRoom._id)
-                io.to(newRoom._id).emit("on-create", {              // just to convey who is the creator of the room
+                console.log("in here")
+                const roomID = `room-${newRoom._id}`
+                socket.join(roomID)
+                io.to(roomID).emit("on-create", {              // just to convey who is the creator of the room
                     user: response.username,
-                    roomID : newRoom._id
+                    roomID : newRoom._id,
+                    message : "Hey buddy"
                 })
             }
             else{
@@ -64,20 +65,28 @@ io.on("connection", (socket) => {
             return
         }
         else{
-            const user = await User.findById({_id: validUser.id})
-            const response = await Room.findById({_id : data.roomID})
-            if(!response){
-                console.log("not found")
-                return
+            try{
+                const user = await User.findById({_id: validUser.id})
+                const response = await Room.findById({_id : data.roomID})
+                if(!response){
+                    console.log("not found")
+                    return
+                }
+                else{
+                    console.log(data.roomID)
+                    const roomID = `room-${data.roomID}`
+                    socket.join(roomID)
+                    console.log("joined")
+                    socket.to(roomID).emit("on-join", {                          // not fixed
+                        roomID : data.roomID,
+                        userID : user._id,
+                        msg : "test-message"
+                    })
+                    console.log("done")
+                }
             }
-            else{
-                socket.join(data.roomID)
-                console.log("joined")
-                io.to(data.roomID.toString()).emit("on-join", {     // not fixed
-                    roomID : data.roomID,
-                    userID : user._id
-                })
-                console.log("done")
+            catch(err){
+                console.error("error occurred. ", err)
             }
         }
     })
