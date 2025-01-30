@@ -21,7 +21,7 @@ const io = new Server(httpServer, {
 app.use(cors())
 app.use(express.json())
 
-const connectedSockets = [];
+const connectedSockets = [];        // not using it anywhere
 
 io.on("connection", (socket) => {
     console.log("User connected: ", socket.id);
@@ -46,7 +46,7 @@ io.on("connection", (socket) => {
                 console.log("in here")
                 const roomID = `room-${newRoom._id}`
                 socket.join(roomID)
-                io.to(roomID).emit("on-create", {              // just to convey who is the creator of the room
+                io.to(roomID).emit("on-create", {         
                     user: response.username,
                     roomID : newRoom._id,
                     message : "Hey buddy"
@@ -77,7 +77,8 @@ io.on("connection", (socket) => {
                     const roomID = `room-${data.roomID}`
                     socket.join(roomID)
                     console.log("joined")
-                    socket.to(roomID).emit("on-join", {                          // not fixed
+                    socket.emit("on-join", "")
+                    socket.to(roomID).emit("on-join", {                    
                         roomID : data.roomID,
                         userID : user._id,
                         msg : "test-message"

@@ -21,7 +21,7 @@ export function Signin() {
             )
             if (response) {
                 localStorage.setItem("token" , response.data.token)
-                navigate("/meeting")
+                navigate("/landing")
             }
         }
         catch(err){

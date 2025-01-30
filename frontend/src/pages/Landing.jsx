@@ -2,20 +2,23 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router";
 import { socket } from "../services/socket"
 
-export const Meeting = () => {
+export const Landing = () => {
     const [meetingId, setMeetingId] = useState("")
     const [message , setMessage] = useState("")
-    const  navigate = useNavigate()
+    const navigate = useNavigate()
+    const [join , setJoin] = useState(false)
 
     useEffect(()=>{
         socket.on("on-join", (data)=>{
-            setMessage(data.msg)     
+            setMessage("testing.....")
+            alert("Ready to join...")
+            navigate("/discussion")
         })
 
         socket.on("on-create", (data)=>{
             setMessage(`${data.roomID} , ${data.userID} , ${data.msg} `)
-            // navigate("/discussion")
-
+            console.log(`Room ID to join is : ${data.roomID}`)
+            navigate("/discussion")
         })
 
         socket.on("failed-room", ()=>{
@@ -26,7 +29,7 @@ export const Meeting = () => {
             socket.off("on-join")
             socket.off("failed-room")
         }
-    }, [])
+    }, [join])
 
     const joinRoom = () => {
         const Token = localStorage.getItem("token")
@@ -34,20 +37,17 @@ export const Meeting = () => {
             token : `Bearer ${Token}`,
             roomID : meetingId
         })
-
+        setJoin(true)
     }
 
     const createRoom = () => {
-        // Room creation call logic
         const Token = localStorage.getItem("token")
         socket.emit("create-room", {
             token: `Bearer ${Token}`
         })
-        
-
     }
 
-    return <div>
+     return <div>
         <h2>
             Meeting page
         </h2>
@@ -65,10 +65,10 @@ export const Meeting = () => {
             </div>
         </div>
         <h3>{message}</h3>
-    </div>
+    </div>    
 }
 
-export default Meeting;
+export default Landing;
 
 
 
