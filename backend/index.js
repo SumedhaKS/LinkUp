@@ -58,7 +58,7 @@ io.on("connection", (socket) => {
         }
     })
 
-    socket.on("join-room", async (data)=>{
+    socket.on("join-room", async (data)=>{                  //send offer from here,  params= roomID
         const token = data.token.split(" ")[1];
         const validUser = jwt.verify(token, jwtSecret)
         if(!validUser){

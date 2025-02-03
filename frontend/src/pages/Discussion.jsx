@@ -5,12 +5,13 @@ export default function Discussion() {
     const [joined, setJoined] = useState(false);
     const [localAudioTrack, setLocalAudioTrack] = useState(null);
     const [localVideoTrack, setLocalVideoTrack] = useState(null);
+    const [name, setName] = useState("")
     const videoRef = useRef(null);
     
     const getCam = async ()=>{
         const stream = await window.navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: false
+            audio: true
         })
         const audioTrack = stream.getAudioTracks()[0]
         const videoTrack = stream.getVideoTracks()[0]
@@ -21,7 +22,7 @@ export default function Discussion() {
             return;
         }
         videoRef.current.srcObject = new MediaStream([videoTrack])
-        videoRef.current.play();
+        await videoRef.current.play();
     }
 
     useEffect(()=>{
@@ -36,6 +37,7 @@ export default function Discussion() {
             Discussion Page
 
             <div >
+                <input type="text" value={name} onChange={(e)=>setName(e.target.value)} />
                 <video autoPlay ref={videoRef}></video>
                 <button onClick={()=>setJoined(true)}>Join</button>
 
@@ -44,6 +46,6 @@ export default function Discussion() {
 
     }
 
-    return <Participant localAudioTrack={localAudioTrack} localVideoTrack={localVideoTrack} />
+    return <Participant name={name} localAudioTrack={localAudioTrack} localVideoTrack={localVideoTrack} />
 
 }
